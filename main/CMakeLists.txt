@@ -1,2 +1,2 @@
-idf_component_register(SRCS "hc_http.c" "hc_mqtt.c" "main.c"
+idf_component_register(SRCS "nvs.c"
                     INCLUDE_DIRS ".")
