@@ -1,7 +1,7 @@
-#include "hc_mqtt.h"
+#include "../include/hc_mqtt.h"
 #include "cJSON.h"
 
-static const char *TAG = "MQTT_EXAMPLE";
+static const char *TAG = "hc_mqtt";
 
 esp_mqtt_client_handle_t client;
 
@@ -12,47 +12,47 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
-            printf("MQTT_EVENT_CONNECTED\r\n");
+            ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED\r\n");
             // 连接成功后订阅主题（可选）
             esp_mqtt_client_subscribe(client, "/things/down", 0);
             break;
             
         case MQTT_EVENT_DISCONNECTED:
-            printf("MQTT_EVENT_DISCONNECTED\r\n");
+            ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED\r\n");
             break;
             
         case MQTT_EVENT_SUBSCRIBED:
-            printf("MQTT_EVENT_SUBSCRIBED, msg_id=%d\r\n", event->msg_id);
+            ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d\r\n", event->msg_id);
             break;
             
         case MQTT_EVENT_UNSUBSCRIBED:
-            printf("MQTT_EVENT_UNSUBSCRIBED, msg_id=%d\r\n", event->msg_id);
+            ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d\r\n", event->msg_id);
             break;
             
         case MQTT_EVENT_PUBLISHED:
-            printf("MQTT_EVENT_PUBLISHED, msg_id=%d\r\n", event->msg_id);
+            ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d\r\n", event->msg_id);
             break;
             
         case MQTT_EVENT_DATA:
-            printf("MQTT_EVENT_DATA\r\n");  
-            printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-            printf("DATA=%.*s\r\n", event->data_len, event->data);
+            ESP_LOGI(TAG, "MQTT_EVENT_DATA\r\n");  
+            ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
+            ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
 
             cJSON *root = cJSON_Parse(event->data);
             if (root == NULL) {
-                printf("json parse error\r\n");
+                ESP_LOGI(TAG, "json parse error\r\n");  
                 break;
             }
 
             cJSON *f = cJSON_GetObjectItem(root, "f");
             cJSON *v = cJSON_GetObjectItem(root, "v");
-            printf("f=%d, v=%s\r\n", f->valueint, v->valuestring);
+            ESP_LOGI(TAG, "f=%d, v=%s\r\n", f->valueint, v->valuestring);
 
             cJSON *d = cJSON_GetObjectItem(root, "data");
             cJSON *key = cJSON_GetObjectItem(d,"key");
             if(key != NULL)
             {
-                printf("key=%s\r\n", key->valuestring);
+                ESP_LOGI(TAG, "key=%s\r\n", key->valuestring);  
             }
 
             cJSON_Delete(root);
@@ -66,7 +66,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
             char* json_str = NULL;
             create_json_example(&json_str);
-            printf("json_str=%s\r\n", json_str);
+            ESP_LOGI(TAG, "json_str=%s\r\n", json_str);
             // 发布数据
             send_mqtt_data("/things/up", json_str);
             // 释放JSON字符串内存，避免内存泄漏
@@ -74,11 +74,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             break;
             
         case MQTT_EVENT_ERROR:
-            printf("MQTT_EVENT_ERROR\r\n");
+            ESP_LOGI(TAG, "MQTT_EVENT_ERROR\r\n");
             break;
             
         default:
-            printf("Other event id:%d\r\n", event->event_id);
+            ESP_LOGI(TAG, "Other event id:%d\r\n", event->event_id);
             break;
     }
 }
@@ -103,7 +103,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 // 初始化MQTT客户端
  void mqtt_app_start(void) {
     esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = "mqtt://172.24.73.22:21883", // 替换为你的MQTT服务器地址
+        .broker.address.uri = "mqtt://pre-cn-gather.hero-ee.com:10086", // 替换为你的MQTT服务器地址
         // 如果需要认证，添加以下配置：
         .credentials.username = "admin",
         .credentials.authentication.password = "hc123456",
@@ -118,5 +118,5 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 // 发送MQTT数据函数
 void send_mqtt_data(const char *topic, const char *data) {
     int msg_id = esp_mqtt_client_publish(client, topic, data, 0, 1, 0);
-    printf("my send [%s]: %s (msg_id=%d)\r\n", topic, data, msg_id);
+    ESP_LOGI(TAG, "my send [%s]: %s (msg_id=%d)\r\n", topic, data, msg_id);
 }
