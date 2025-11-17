@@ -78,7 +78,6 @@ void btn_led_main() {
   if(led_task_res != pdPASS){
     ESP_LOGE(TAG, "led xTaskCreate failed");
   }
-
 }
 
 

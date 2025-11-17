@@ -66,7 +66,14 @@
     "streambuf": "cpp",
     "text_encoding": "cpp",
     "typeinfo": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "ws2812b.h": "c",
+    "ble_server.h": "c",
+    "hc_gobal.h": "c",
+    "esp_crt_bundle.h": "c",
+    "esp_log.h": "c"
   },
-  "idf.portWin": "COM3"
+  "idf.portWin": "COM3",
+  "idf.espIdfPathWin": "d:\\APP\\esp\\v5.5.1",
+  "idf.toolsPathWin": "D:\\APP\\.espressif"
 }

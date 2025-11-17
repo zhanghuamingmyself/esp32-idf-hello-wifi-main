@@ -10,6 +10,7 @@
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -22,7 +23,8 @@
 #include "esp_bt_device.h"
 #include "esp_gatt_common_api.h"
 #include "../include/ble_server.h"
-#include "../include/ws2812b.h"
+
+#include "../include/hc_gobal.h"
 
 
 #define PROFILE_NUM 2
@@ -120,6 +122,9 @@ static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
         .gatts_if = ESP_GATT_IF_NONE,       /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
 };
+
+
+
 
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -353,16 +358,12 @@ static void auto_io_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_
 
         // 检查写入数据长度是否足够RGB颜色设置
         if (param->write.len >= 3) {
-            ESP_LOGI(TAG, "LED RGB值: %d, %d, %d", param->write.value[0], param->write.value[1], param->write.value[2]);
-
-            // 使用指针直接访问写入值
             ws2812b_color_t color = { 
                 .g = param->write.value[0], 
                 .r = param->write.value[1], 
                 .b = param->write.value[2] 
             };
-
-            ws2812b_set_colors((ws2812b_color_t[]){color}, WS2812B_LED_NUMBERS);
+            xQueueSend(colorCmdQueue, &color, portMAX_DELAY);
         } else {
             ESP_LOGE(TAG, "LED颜色写入错误: 需要3字节数据, 实际收到%d字节", param->write.len);
         }
@@ -434,22 +435,18 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 }
 
 
+
+
 void ble_server_init(void)
 {
     esp_err_t ret;
-
-     // 初始化WS2812B驱动
-    ret = ws2812b_rmt_driver_install();
-    if (ret != ESP_OK) {
-        ESP_LOGI(TAG, "WS2812B驱动初始化失败，程序停止！\n");
-        return;
-    }
 
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
+
     ESP_ERROR_CHECK(ret);
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));

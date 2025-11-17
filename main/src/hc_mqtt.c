@@ -1,4 +1,6 @@
 #include "../include/hc_mqtt.h"
+#include "esp_tls.h"
+#include "esp_crt_bundle.h"
 #include "cJSON.h"
 
 static const char *TAG = "hc_mqtt";
@@ -102,12 +104,39 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 // 初始化MQTT客户端
  void mqtt_app_start(void) {
+    // 初始化全局CA存储（如果尚未初始化）
+    esp_err_t ret = esp_tls_init_global_ca_store();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize global CA store: %s", esp_err_to_name(ret));
+    }
+    
     esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = "mqtt://pre-cn-gather.hero-ee.com:10086", // 替换为你的MQTT服务器地址
-        // 如果需要认证，添加以下配置：
-        .credentials.username = "admin",
-        .credentials.authentication.password = "hc123456",
-        // .credentials.authentication.client_id = "hithium-cloud-gather-server-zhm",
+         .broker = {
+            .address.uri = "mqtts://pre-cn-gather.hero-ee.com:10086",
+            .verification = {
+                .skip_cert_common_name_check = true, // 跳过CN检查
+            }
+        },
+        .credentials = {
+            .client_id = "hithium-cloud-gather-server-esp",
+            .username = "admin",
+            .authentication = {
+                .password = "hc123456",
+            }
+        },
+        .session = {
+            .last_will = {
+                .topic = "esp32/status",
+                .msg = "offline",
+                .msg_len = 7,
+                .qos = 1,
+                .retain = 1
+            }
+        },
+        .network = {
+            .reconnect_timeout_ms = 60 * 1000,
+            .timeout_ms = 10000
+        }
     };
 
     client = esp_mqtt_client_init(&mqtt_cfg);

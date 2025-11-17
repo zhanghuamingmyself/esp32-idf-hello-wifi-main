@@ -22,6 +22,7 @@
 #include "nvs_flash.h"
 #include "./include/btn_led.h"
 #include "./include/ble_server.h"
+#include "./include/ws2812b.h"
 
 // Status LED
 #define LED_RED GPIO_NUM_2
@@ -162,6 +163,14 @@ void app_main() {
   ESP_LOGI(TAG, "\nESP-IDF version used: %s\n", IDF_VER);
 
   initNet();
+
+  esp_err_t ret;
+  // 初始化WS2812B驱动
+  ret = ws2812b_rmt_driver_install();
+  if (ret != ESP_OK) {
+      ESP_LOGI(TAG, "WS2812B驱动初始化失败，程序停止！\n");
+      return;
+  }
 
   ble_server_init();
 

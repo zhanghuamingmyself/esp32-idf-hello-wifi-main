@@ -3,6 +3,7 @@
 
 #include "driver/rmt_tx.h"
 #include "esp_err.h"
+#include "hc_gobal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,12 +12,7 @@ extern "C" {
 // 定义WS2812B灯珠的数量，请根据实际修改
 #define WS2812B_LED_NUMBERS 1
 
-// 简化颜色结构体
-typedef struct {
-    uint8_t g; // 绿色
-    uint8_t r; // 红色
-    uint8_t b; // 蓝色
-} ws2812b_color_t;
+
 
 /**
  * @brief 初始化WS2812B RMT驱动

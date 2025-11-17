@@ -1,4 +1,6 @@
 #include "../include/hc_http.h"
+#include "esp_tls.h"
+#include "esp_crt_bundle.h"
 #include "esp_log.h"
 
 static const char *TAG = "hc_http";
@@ -40,7 +42,9 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt) {
 
 void http_get_task(void *pvParameters) {
     esp_http_client_config_t config = {
-        .url = "http://httpbin.org/get",
+        .crt_bundle_attach = esp_crt_bundle_attach,  // 必须设置服务器验证
+        .skip_cert_common_name_check = false,        // 启用CN检查
+        .url = "https://pre-cn.hero-ee.com:8001/api/regionWeb/countryInfo/getCountryList",
         .event_handler = http_event_handler,
         .timeout_ms = 5000,
     };
