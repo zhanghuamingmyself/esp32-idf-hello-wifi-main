@@ -65,11 +65,11 @@ void wifi_led_task(void *pvParameter)
     if (xEventGroupGetBits(wifi_event_group) & CONNECTED_BIT) {
       // We are connected - LED on
       gpio_set_level(LED_RED, 1);
-      vTaskDelay(200 / portTICK_PERIOD_MS);
+      vTaskDelay(2000 / portTICK_PERIOD_MS);
     } else {
       // We are connecting - blink fast
       gpio_set_level(LED_RED, 0);
-      vTaskDelay(200 / portTICK_PERIOD_MS);
+      vTaskDelay(2000/ portTICK_PERIOD_MS);
     }
   }
 }
@@ -175,10 +175,6 @@ void app_main() {
   ble_server_init();
 
   btn_led_main();
-
-  // neopixel_init();
-
-  // set_led_color(255, 0, 0);
 
   // The LED task is used to show the connection status
   xTaskCreate(&wifi_led_task, "wifi_led_task", 2048, NULL, 5, NULL);
