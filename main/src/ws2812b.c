@@ -36,17 +36,6 @@ static rmt_bytes_encoder_config_t bytes_encoder_config = {
 
 void consumer_task(void *pvParameters)
 {
-    // 创建全局队列（如果尚未创建）
-    if (colorCmdQueue == NULL) {
-        colorCmdQueue = xQueueCreate(5, sizeof(ws2812b_color_t));
-        if (colorCmdQueue == NULL) {
-            ESP_LOGE(TAG, "Failed to create command queue");
-            vTaskDelete(NULL);
-            return;
-        }
-        ESP_LOGI(TAG, "Command queue created successfully");
-    }
-    
     ws2812b_color_t color;
     while(1)
     {
@@ -56,6 +45,7 @@ void consumer_task(void *pvParameters)
             // 使用指针直接访问写入值
             ws2812b_set_colors((ws2812b_color_t[]){color}, WS2812B_LED_NUMBERS);
         }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -107,7 +97,7 @@ esp_err_t ws2812b_rmt_driver_install(void)
 
     ESP_LOGI(TAG, "WS2812B RMT驱动初始化成功，GPIO: %d", GPIO_NUM_48);
 
-    xTaskCreate(&consumer_task, "consumer_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&consumer_task, "consumer_task", 1024, NULL, 5, NULL);
 
     return ESP_OK;
 }

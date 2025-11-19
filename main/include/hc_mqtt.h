@@ -8,7 +8,6 @@
 
 void mqtt_app_start(void);
 void send_mqtt_data(const char *topic, const char *data);
-void create_json_example(char **json_str);
 
 
 #endif

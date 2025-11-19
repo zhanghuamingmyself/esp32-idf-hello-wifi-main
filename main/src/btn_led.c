@@ -62,16 +62,12 @@ void init_btn(){
   gpio_isr_handler_add(BUTTON_GPIO, button_isr_handler, NULL);
 }
 
-void init(){
+// Main application
+void btn_led_main() {
   ESP_LOGE(TAG, "init");
   init_led();
   init_btn();
 
-}
-
-// Main application
-void btn_led_main() {
-  init();
 
   // ESP_ERROR_CHECK()
   BaseType_t led_task_res = xTaskCreate(&led_task,"led_task",2048,NULL,5,NULL);

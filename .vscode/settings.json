@@ -71,7 +71,14 @@
     "ble_server.h": "c",
     "hc_gobal.h": "c",
     "esp_crt_bundle.h": "c",
-    "esp_log.h": "c"
+    "esp_log.h": "c",
+    "stdlib.h": "c",
+    "mqtt_client.h": "c",
+    "esp_modbus_master.h": "c",
+    "mbcontroller.h": "c",
+    "esp_err.h": "c",
+    "modbus_client.h": "c",
+    "esp_modbus_common.h": "c"
   },
   "idf.portWin": "COM3",
   "idf.espIdfPathWin": "d:\\APP\\esp\\v5.5.1",

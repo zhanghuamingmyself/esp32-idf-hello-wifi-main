@@ -23,6 +23,8 @@
 #include "./include/btn_led.h"
 #include "./include/ble_server.h"
 #include "./include/ws2812b.h"
+#include "./include/modbus_client.h"
+#include "esp_task_wdt.h"
 
 // Status LED
 #define LED_RED GPIO_NUM_2
@@ -65,12 +67,11 @@ void wifi_led_task(void *pvParameter)
     if (xEventGroupGetBits(wifi_event_group) & CONNECTED_BIT) {
       // We are connected - LED on
       gpio_set_level(LED_RED, 1);
-      vTaskDelay(2000 / portTICK_PERIOD_MS);
     } else {
       // We are connecting - blink fast
       gpio_set_level(LED_RED, 0);
-      vTaskDelay(2000/ portTICK_PERIOD_MS);
     }
+     vTaskDelay(2000/ portTICK_PERIOD_MS);
   }
 }
 
@@ -90,11 +91,30 @@ void main_task(void *pvParameter) {
   ESP_LOGI(TAG, "Gateway:     " IPSTR "\n", IP2STR(&ip_info.gw)); 
   ESP_LOGI(TAG, "You can connect now to any web server online! :-)\n");
 
+  esp_err_t ret;
+
+  init_gobal();
+
+  // 初始化WS2812B驱动
+  ret = ws2812b_rmt_driver_install();
+  if (ret != ESP_OK) {
+      ESP_LOGI(TAG, "WS2812B驱动初始化失败，程序停止！\n");
+      return;
+  }
+
+  ble_server_init();
+
+  btn_led_main();
+
+  
   http_get_task(NULL);
    // 启动MQTT客户端
   mqtt_app_start();
 
+  // The LED task is used to show the connection status
+  xTaskCreate(&wifi_led_task, "wifi_led_task", 1024, NULL, 5, NULL);
 
+  test_modbus_tcp_client();
 
   while (1) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -102,13 +122,7 @@ void main_task(void *pvParameter) {
 }
 
 void initNet(){
-  // Initialize NVS — required before Wi-Fi / esp_netif
-  esp_err_t ret = nvs_flash_init();
-  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(ret);
+ 
   
   // Initialize the TCP/IP stack
   esp_netif_init();
@@ -162,28 +176,22 @@ void app_main() {
  
   ESP_LOGI(TAG, "\nESP-IDF version used: %s\n", IDF_VER);
 
+   // Initialize NVS — required before Wi-Fi / esp_netif
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+      ESP_ERROR_CHECK(nvs_flash_erase());
+      ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+
   initNet();
 
-  esp_err_t ret;
-  // 初始化WS2812B驱动
-  ret = ws2812b_rmt_driver_install();
-  if (ret != ESP_OK) {
-      ESP_LOGI(TAG, "WS2812B驱动初始化失败，程序停止！\n");
-      return;
+  // Start the main task
+  xTaskCreate(&main_task, "main_task", 10240, NULL, 5, NULL);
+
+  while (1) {
+    // esp_task_wdt_reset();
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
-
-  ble_server_init();
-
-  btn_led_main();
-
-  // The LED task is used to show the connection status
-  xTaskCreate(&wifi_led_task, "wifi_led_task", 2048, NULL, 5, NULL);
-
-  // // Start the main task
-  xTaskCreate(&main_task, "main_task", 5024, NULL, 5, NULL);
-
-    while (1) {
-          vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
 
 }

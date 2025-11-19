@@ -13,4 +13,6 @@ typedef struct {
 
 extern QueueHandle_t colorCmdQueue;
 
+void init_gobal(void);
+
 #endif
