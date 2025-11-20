@@ -505,6 +505,11 @@ void ble_server_init(void)
         ESP_LOGE(TAG, "set local  MTU failed, error code = %x", ret);
     }
 
+    ret = esp_ble_gap_set_device_name("ESP_ZHM");
+    if (ret) {
+        ESP_LOGE(TAG, "set name failed, error code = %x", ret);
+    }
+
 }
 
 void example_write_event_env(esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)

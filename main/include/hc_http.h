@@ -5,4 +5,6 @@
 
 void http_get_task(void *pvParameters);
 
+void http_server_task(void *pvParameters);
+
 #endif

@@ -31,10 +31,8 @@
 #define LED_RED GPIO_NUM_2
 
 // WiFi parameters
-#define WIFI_SSID "Hithium-SZ-guest"
-//CONFIG_ESP_WIFI_SSID
-#define WIFI_PASS "hc123456"
-// CONFIG_ESP_WIFI_PASSWORD
+#define WIFI_SSID CONFIG_ESP_WIFI_SSID
+#define WIFI_PASS CONFIG_ESP_WIFI_PASSWORD
 
 // Event group
 static EventGroupHandle_t wifi_event_group;
@@ -120,7 +118,7 @@ void main_task(void *pvParameter) {
 
   btn_led_init();
 
-   xTaskCreate(&ota_task, "ota_task", 8192, NULL, 5, NULL);
+  //  xTaskCreate(&ota_task, "ota_task", 8192, NULL, 5, NULL);
 
   // http_get_task(NULL);
   //  // 启动MQTT客户端

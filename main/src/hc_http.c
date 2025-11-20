@@ -109,3 +109,14 @@ void http_get_task(void *pvParameters) {
     // 清理资源
     esp_http_client_cleanup(client);
 }
+
+
+void http_server_task(void *pvParameters) {
+    // 这里可以实现一个简单的HTTP服务器，监听请求并响应
+    // 由于篇幅限制，此处仅为示例框架
+    ESP_LOGI(TAG, "HTTP server task started");
+    while (1) {
+        // 监听和处理HTTP请求的逻辑
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
