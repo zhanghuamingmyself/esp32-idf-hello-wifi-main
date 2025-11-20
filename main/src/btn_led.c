@@ -63,7 +63,7 @@ void init_btn(){
 }
 
 // Main application
-void btn_led_main() {
+void btn_led_init() {
   ESP_LOGE(TAG, "init");
   init_led();
   init_btn();

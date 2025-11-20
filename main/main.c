@@ -24,7 +24,8 @@
 #include "./include/ble_server.h"
 #include "./include/ws2812b.h"
 #include "./include/modbus_client.h"
-#include "esp_task_wdt.h"
+#include "./include/hc_ota.h"
+// #include "esp_task_wdt.h"
 
 // Status LED
 #define LED_RED GPIO_NUM_2
@@ -95,6 +96,8 @@ void main_task(void *pvParameter) {
 
   init_gobal();
 
+  vTaskDelay(2000 / portTICK_PERIOD_MS);
+
   // 初始化WS2812B驱动
   ret = ws2812b_rmt_driver_install();
   if (ret != ESP_OK) {
@@ -102,19 +105,28 @@ void main_task(void *pvParameter) {
       return;
   }
 
+  ws2812b_color_t color = { 
+                .g = 0, 
+                .r = 255, 
+                .b = 0 
+            };
+  xQueueSend(colorCmdQueue, &color, portMAX_DELAY);
+
+  size_t free_heap_total = esp_get_free_heap_size();
+  size_t free_heap_internal = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+  ESP_LOGI(TAG, "Heap free total: %u, internal: %u", free_heap_total, free_heap_internal);
+
   ble_server_init();
 
-  btn_led_main();
+  btn_led_init();
 
-  
-  http_get_task(NULL);
-   // 启动MQTT客户端
-  mqtt_app_start();
+   xTaskCreate(&ota_task, "ota_task", 8192, NULL, 5, NULL);
 
-  // The LED task is used to show the connection status
-  xTaskCreate(&wifi_led_task, "wifi_led_task", 1024, NULL, 5, NULL);
+  // http_get_task(NULL);
+  //  // 启动MQTT客户端
+  // mqtt_app_start();
 
-  test_modbus_tcp_client();
+  // test_modbus_tcp_client();
 
   while (1) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -169,6 +181,9 @@ void initNet(){
   ESP_ERROR_CHECK(esp_wifi_start());
 
   wifi_led_config();
+
+   // The LED task is used to show the connection status
+  xTaskCreate(&wifi_led_task, "wifi_led_task", 1024, NULL, 5, NULL);
 }
 
 // Main application

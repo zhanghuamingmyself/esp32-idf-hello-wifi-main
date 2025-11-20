@@ -359,8 +359,8 @@ static void auto_io_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_
         // 检查写入数据长度是否足够RGB颜色设置
         if (param->write.len >= 3) {
             ws2812b_color_t color = { 
-                .g = param->write.value[0], 
-                .r = param->write.value[1], 
+                .g = param->write.value[1], 
+                .r = param->write.value[0], 
                 .b = param->write.value[2] 
             };
             xQueueSend(colorCmdQueue, &color, portMAX_DELAY);

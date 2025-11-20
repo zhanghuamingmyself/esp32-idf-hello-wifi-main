@@ -4,6 +4,10 @@
 #include "driver/rmt_tx.h"
 #include "esp_err.h"
 #include "hc_gobal.h"
+#include "driver/gpio.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,12 +26,10 @@ extern "C" {
  */
 esp_err_t ws2812b_rmt_driver_install(void);
 
-/**
- * @brief 设置所有灯珠的颜色并刷新显示
- * @param color_array 颜色数组指针
- * @param led_num 灯珠数量
- */
-void ws2812b_set_colors(ws2812b_color_t *color_array, uint16_t led_num);
+void ws2812b_set_pixel_color(uint16_t index, ws2812b_color_t color);
+
+
+void ws2812b_set_colors(void);
 
 /**
  * @brief 清除所有灯珠（熄灭）

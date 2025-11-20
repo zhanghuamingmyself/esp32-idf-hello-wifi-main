@@ -1,8 +1,5 @@
 #include "../include/ws2812b.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+
 
 
 static const char *TAG = "WS2812B";
@@ -43,7 +40,8 @@ void consumer_task(void *pvParameters)
         {
             ESP_LOGI(TAG, "RGB值: %d, %d, %d", color.r, color.g, color.b);
             // 使用指针直接访问写入值
-            ws2812b_set_colors((ws2812b_color_t[]){color}, WS2812B_LED_NUMBERS);
+            ws2812b_set_pixel_color(0, color);
+            ws2812b_set_colors();
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
@@ -97,20 +95,37 @@ esp_err_t ws2812b_rmt_driver_install(void)
 
     ESP_LOGI(TAG, "WS2812B RMT驱动初始化成功，GPIO: %d", GPIO_NUM_48);
 
-    xTaskCreate(&consumer_task, "consumer_task", 1024, NULL, 5, NULL);
+    // Ensure command queue exists (create if not) and use larger stack for consumer task
+    if (colorCmdQueue == NULL) {
+        colorCmdQueue = xQueueCreate(8, sizeof(ws2812b_color_t));
+        if (colorCmdQueue == NULL) {
+            ESP_LOGE(TAG, "创建 colorCmdQueue 失败");
+            rmt_del_encoder(led_encoder);
+            rmt_del_channel(tx_chan);
+            return ESP_ERR_NO_MEM;
+        }
+    }
+
+    // Consumer uses RMT API -> give larger stack to avoid stack corruption
+    if (xTaskCreate(consumer_task, "consumer_task", 4096, NULL, 5, NULL) != pdPASS) {
+        ESP_LOGE(TAG, "创建 consumer_task 失败");
+        rmt_del_encoder(led_encoder);
+        rmt_del_channel(tx_chan);
+        return ESP_ERR_NO_MEM;
+    }
 
     return ESP_OK;
 }
 
-void ws2812b_set_colors(ws2812b_color_t *color_array, uint16_t led_num)
+void ws2812b_set_colors(void)
 {
-    if (color_array == NULL || led_num == 0 || tx_chan == NULL || led_encoder == NULL) {
+    if (tx_chan == NULL || led_encoder == NULL) {
         ESP_LOGE(TAG, "参数错误或驱动未初始化");
         return;
     }
 
     // 传输数据（GRB顺序）
-    esp_err_t ret = rmt_transmit(tx_chan, led_encoder, (void*)color_array, led_num * 3, &tx_config);
+    esp_err_t ret = rmt_transmit(tx_chan, led_encoder, (void*)led_colors, WS2812B_LED_NUMBERS * 3, &tx_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "RMT传输失败: %s", esp_err_to_name(ret));
         return;
@@ -136,7 +151,7 @@ void ws2812b_clear(void)
     for (int i = 0; i < WS2812B_LED_NUMBERS; i++) {
         led_colors[i] = (ws2812b_color_t){ .g = 0, .r = 0, .b = 0 };
     }
-    ws2812b_set_colors(led_colors, WS2812B_LED_NUMBERS);
+    ws2812b_set_colors();
 }
 
 

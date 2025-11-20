@@ -78,7 +78,11 @@
     "mbcontroller.h": "c",
     "esp_err.h": "c",
     "modbus_client.h": "c",
-    "esp_modbus_common.h": "c"
+    "esp_modbus_common.h": "c",
+    "chrono": "c",
+    "ratio": "c",
+    "ets_sys.h": "c",
+    "gpio.h": "c"
   },
   "idf.portWin": "COM3",
   "idf.espIdfPathWin": "d:\\APP\\esp\\v5.5.1",
