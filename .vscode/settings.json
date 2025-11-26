@@ -95,7 +95,12 @@
     "hc_http_server.h": "c",
     "esp_event.h": "c",
     "web_server.h": "c",
-    "esp_spiffs.h": "c"
+    "esp_spiffs.h": "c",
+    "freertos.h": "c",
+    "main_app.h": "c",
+    "usb_host.h": "c",
+    "ff.h": "c",
+    "dirent.h": "c"
   },
   "idf.portWin": "COM3",
   "idf.espIdfPathWin": "d:\\APP\\esp\\esp-idf-v5.5.1\\esp-idf-v5.5.1",
