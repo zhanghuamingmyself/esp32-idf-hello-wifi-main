@@ -1,0 +1,256 @@
+<!-- main/data/index.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Web服务器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        .btn:hover { background: #5a6fd8; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .status { padding: 10px; border-radius: 5px; margin: 5px 0; }
+        .status.online { background: #d4edda; color: #155724; }
+        .status.offline { background: #f8d7da; color: #721c24; }
+        .log { 
+            background: #2d3748; 
+            color: #e2e8f0; 
+            padding: 15px; 
+            border-radius: 5px; 
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 ESP32 Web服务器控制面板</h1>
+            <p>ESP32设备远程监控与控制系统</p>
+        </div>
+
+        <div class="card">
+            <h2>📊 系统状态</h2>
+            <div id="systemStatus">正在加载...</div>
+            <button class="btn" onclick="refreshSystemInfo()">刷新状态</button>
+        </div>
+
+        <div class="card">
+            <h2>💡 LED控制</h2>
+            <button class="btn" onclick="controlLED(true)">打开LED</button>
+            <button class="btn" onclick="controlLED(false)">关闭LED</button>
+            <div id="ledStatus" class="status">状态: 未知</div>
+        </div>
+
+        <div class="card">
+            <h2>📤 文件上传</h2>
+            <input type="file" id="fileInput">
+            <button class="btn" onclick="uploadFile()">上传文件</button>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <div class="card">
+            <h2>📋 系统日志</h2>
+            <button class="btn" onclick="clearLog()">清空日志</button>
+            <div class="log" id="logOutput"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let ws = null;
+        let isConnected = false;
+
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #a0aec0">[${timestamp}]</span> ${message}`;
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // 初始化WebSocket连接
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = function() {
+                    isConnected = true;
+                    addLog('WebSocket连接已建立', 'success');
+                    document.getElementById('systemStatus').innerHTML = 
+                        '<div class="status online">WebSocket: 已连接</div>';
+                };
+                
+                ws.onmessage = function(event) {
+                    addLog(`收到消息: ${event.data}`, 'websocket');
+                };
+                
+                ws.onclose = function() {
+                    isConnected = false;
+                    addLog('WebSocket连接已关闭', 'warning');
+                    document.getElementById('systemStatus').innerHTML = 
+                        '<div class="status offline">WebSocket: 已断开</div>';
+                    
+                    // 5秒后重连
+                    setTimeout(initWebSocket, 5000);
+                };
+                
+                ws.onerror = function(error) {
+                    addLog('WebSocket错误: ' + error, 'error');
+                };
+            } catch (error) {
+                addLog('WebSocket初始化失败: ' + error, 'error');
+            }
+        }
+
+        // API调用函数
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (data && (method === 'POST' || method === 'PUT')) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(`/api${endpoint}`, options);
+                const result = await response.json();
+                
+                addLog(`${method} ${endpoint}: ${response.status}`);
+                return result;
+            } catch (error) {
+                addLog(`API调用失败: ${error}`, 'error');
+                return null;
+            }
+        }
+
+        // 刷新系统信息
+        async function refreshSystemInfo() {
+            const status = await apiCall('/status');
+            const system = await apiCall('/system');
+            
+            if (status && system) {
+                document.getElementById('systemStatus').innerHTML = `
+                    <div class="status online">服务器状态: ${status.status}</div>
+                    <div>版本: ${status.version}</div>
+                    <div>空闲内存: ${system.free_heap} 字节</div>
+                    <div>芯片: ${system.chip_model} (${system.cores}核心)</div>
+                    <div>运行时间: ${Math.round(status.timestamp / 1000)} 秒</div>
+                `;
+            }
+        }
+
+        // LED控制
+        async function controlLED(state) {
+            const result = await apiCall('/led', 'POST', { led: state });
+            if (result) {
+                document.getElementById('ledStatus').innerHTML = 
+                    `<div class="status ${result.success ? 'online' : 'offline'}">${result.message}</div>`;
+                
+                if (ws && isConnected) {
+                    ws.send(JSON.stringify({
+                        type: 'led_control',
+                        state: state,
+                        timestamp: Date.now()
+                    }));
+                }
+            }
+        }
+
+        // 文件上传
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('请选择文件');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                document.getElementById('uploadStatus').innerHTML = 
+                    result.success ? 
+                    `<div class="status online">文件上传成功: ${result.filename} (${result.size}字节)</div>` :
+                    `<div class="status offline">文件上传失败</div>`;
+                    
+                addLog(`文件上传: ${file.name} (${result.size}字节)`);
+            } catch (error) {
+                addLog('文件上传失败: ' + error, 'error');
+            }
+        }
+
+        // 清空日志
+        function clearLog() {
+            document.getElementById('logOutput').innerHTML = '';
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('页面加载完成');
+            refreshSystemInfo();
+            initWebSocket();
+            
+            // 每30秒自动刷新状态
+            setInterval(refreshSystemInfo, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -82,9 +82,22 @@
     "chrono": "c",
     "ratio": "c",
     "ets_sys.h": "c",
-    "gpio.h": "c"
+    "gpio.h": "c",
+    "nvs_flash.h": "c",
+    "nvs.h": "c",
+    "esp_modbus_slave.h": "c",
+    "complex": "c",
+    "bitset": "c",
+    "regex": "c",
+    "modbus_params.h": "c",
+    "esp_wifi.h": "c",
+    "task.h": "c",
+    "hc_http_server.h": "c",
+    "esp_event.h": "c",
+    "web_server.h": "c",
+    "esp_spiffs.h": "c"
   },
   "idf.portWin": "COM3",
-  "idf.espIdfPathWin": "d:\\APP\\esp\\v5.5.1",
+  "idf.espIdfPathWin": "d:\\APP\\esp\\esp-idf-v5.5.1\\esp-idf-v5.5.1",
   "idf.toolsPathWin": "D:\\APP\\.espressif"
 }

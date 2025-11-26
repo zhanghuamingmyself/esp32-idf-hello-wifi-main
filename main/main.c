@@ -18,14 +18,15 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "./include/hc_mqtt.h"
-#include "./include/hc_http.h"
+#include "./include/hc_http_client.h"
 #include "nvs_flash.h"
 #include "./include/btn_led.h"
 #include "./include/ble_server.h"
 #include "./include/ws2812b.h"
 #include "./include/modbus_client.h"
 #include "./include/hc_ota.h"
-// #include "esp_task_wdt.h"
+#include "./include/nvs.h"
+#include "./include/hc_http_server.h"
 
 // Status LED
 #define LED_RED GPIO_NUM_2
@@ -124,7 +125,9 @@ void main_task(void *pvParameter) {
   //  // 启动MQTT客户端
   // mqtt_app_start();
 
-  // test_modbus_tcp_client();
+  // xTaskCreate(&modbus_tcp_client_task, "modbus_tcp_client_task", 4096, NULL, 5, NULL);
+
+  xTaskCreate(&test_http_server_task, "test_http_server_task", 4096, NULL, 5, NULL);
 
   while (1) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -190,12 +193,9 @@ void app_main() {
   ESP_LOGI(TAG, "\nESP-IDF version used: %s\n", IDF_VER);
 
    // Initialize NVS — required before Wi-Fi / esp_netif
-  esp_err_t ret = nvs_flash_init();
-  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(ret);
+  initialize_nvs();
+
+  nvs_test();
 
   initNet();
 

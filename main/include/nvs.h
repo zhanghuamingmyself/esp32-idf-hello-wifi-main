@@ -5,5 +5,8 @@
 #include "nvs.h"
 #include "esp_log.h"
 
+void initialize_nvs();
+void nvs_test();
+
 #endif // __NVS_H__
 

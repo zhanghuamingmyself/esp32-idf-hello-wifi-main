@@ -1,4 +1,4 @@
-#include "../include/hc_http.h"
+#include "../include/hc_http_client.h"
 #include "esp_tls.h"
 #include "esp_crt_bundle.h"
 #include "esp_log.h"
